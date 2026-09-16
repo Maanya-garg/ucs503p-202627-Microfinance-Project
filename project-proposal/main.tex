@@ -291,6 +291,54 @@ correctly rejected (401/403) rather than served.
     average, given the same activity level.
 \end{itemize}
 
+\subsection{Criteria added after the payment-gateway and
+lender-targeting iteration %
+\BvrHint{\ldots problem / solution / evaluation criterion}}
+
+\textbf{Problem:} Borrowers had no way to build real credit
+history through the app -- repayment history only ever came
+from offline synthetic data generation, never from a live
+borrower action.\\
+\textbf{Solution:} A live repayment flow (wallet balance +
+dummy payment gateway) that pays down a real EMI.\\
+\textbf{Evaluation criterion:} A successful payment changes
+the borrower's credit score within the same request that
+processes it -- verified on a real account: score moved
+from 596 (Medium risk) to 886 (Very Low risk) once enough
+on-time repayment history accumulated. A wallet balance
+insufficient to cover the borrower's \emph{total} dues this
+cycle blocks payment of every active loan, not just the one
+clicked.
+
+\medskip
+\textbf{Problem:} A loan request always broadcast to every
+eligible lender, with no way to direct it at one preferred
+lender.\\
+\textbf{Solution:} Optional lender targeting on a request,
+with a retarget path if declined.\\
+\textbf{Evaluation criterion:} A targeted request is visible
+only in the targeted lender's queue (verified: other
+eligible lenders do not see it), and a declined targeted
+request can be retargeted rather than becoming a dead end.
+
+\medskip
+\textbf{Problem:} \texttt{GET /api/shgs} (the SHG browse list
+used by both the lender and admin dashboards) computed each
+SHG's aggregate repayment/attendance rate as a Python
+property that walked \texttt{members -> loans ->
+repayment\_events} per SHG -- an N+1 access pattern that, for
+51 SHGs, materialised on the order of 25{,}000+
+\texttt{RepaymentEvent} ORM objects on every request.\\
+\textbf{Solution:} Replaced the per-SHG Python walk with
+three \texttt{GROUP BY} SQL aggregate queries computed once
+for all SHGs, joined back to each row by id.\\
+\textbf{Evaluation criterion (measured, not estimated):}
+median response time for \texttt{GET /api/shgs} against the
+live dataset (51 SHGs, 1{,}079 individuals) dropped from
+1{,}101--1{,}322\,ms to 14.5--26.7\,ms across repeated runs
+-- roughly a 75$\times$ improvement -- with byte-for-byte
+identical response content verified before and after.
+
 \subsection{Pilot validation plan %
 \BvrHint{\ldots high-level}}
 \begin{itemize}[leftmargin=0.7cm]

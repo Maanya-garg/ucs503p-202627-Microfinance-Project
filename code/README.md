@@ -211,6 +211,15 @@ were bugs:
    the population (whichever didn't fit in the first page) was unreachable by
    search regardless of the limit fix — replaced with real server-side search
    (`?search=`) rather than just raising the limit.
+8. **`GET /api/shgs` was an N+1 query dressed as a model property.**
+   `SHG.aggregate_repayment_rate`/`.aggregate_attendance_rate` walk
+   `members -> loans -> repayment_events` in Python; called once per SHG in
+   the list endpoint, that's ~25,000+ `RepaymentEvent` ORM objects
+   materialized on every request against the real dataset (51 SHGs, 1,079
+   individuals) — measured at 1,101–1,322ms median. Replaced with three
+   `GROUP BY` SQL aggregates computed once and joined back by id: 14.5–26.7ms
+   median, ~75x faster, byte-for-byte identical response content verified
+   before/after.
 
 All of the above were caught by actually running the pipeline end-to-end
 (training on real data, scoring real individuals, hitting the live API,
