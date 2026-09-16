@@ -191,7 +191,7 @@ function LinksOverview({ token }) {
           <thead><tr><th>SHG</th><th>Lender</th><th>Status</th><th>Initiated by</th><th>Requested</th></tr></thead>
           <tbody>
             {data.slice(0, 30).map((l) => (
-              <tr key={l.link_id}>
+              <tr key={l.id}>
                 <td>{l.shg_name}</td>
                 <td>{l.lender_name}</td>
                 <td><StatusChip status={l.status} /></td>

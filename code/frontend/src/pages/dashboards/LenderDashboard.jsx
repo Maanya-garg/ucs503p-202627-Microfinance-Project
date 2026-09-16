@@ -92,7 +92,7 @@ function LinkedShgMembers({ lenderId, token }) {
         <thead><tr><th>SHG</th><th>Status</th><th>Requested</th><th></th></tr></thead>
         <tbody>
           {links.approved.map((l) => (
-            <tr key={l.link_id}>
+            <tr key={l.id}>
               <td>{nameFor(l.shg_id)}</td>
               <td><StatusChip status={l.status} /></td>
               <td className="muted">{l.requested_date}</td>
@@ -108,13 +108,13 @@ function LinkedShgMembers({ lenderId, token }) {
         <thead><tr><th>SHG</th><th>Requested</th><th></th></tr></thead>
         <tbody>
           {links.pending_incoming.map((l) => (
-            <tr key={l.link_id}>
+            <tr key={l.id}>
               <td>{nameFor(l.shg_id)}</td>
               <td className="muted">{l.requested_date}</td>
               <td>
                 <div style={{ display: 'flex', gap: 6 }}>
-                  <button className="btn good" onClick={() => decide(l.link_id, true)}>Approve Partnership</button>
-                  <button className="btn critical" onClick={() => decide(l.link_id, false)}>Reject Partnership</button>
+                  <button className="btn good" onClick={() => decide(l.id, true)}>Approve Partnership</button>
+                  <button className="btn critical" onClick={() => decide(l.id, false)}>Reject Partnership</button>
                 </div>
               </td>
             </tr>
@@ -128,7 +128,7 @@ function LinkedShgMembers({ lenderId, token }) {
         <thead><tr><th>SHG</th><th>Requested</th><th>Status</th></tr></thead>
         <tbody>
           {links.pending_outgoing.map((l) => (
-            <tr key={l.link_id}>
+            <tr key={l.id}>
               <td>{nameFor(l.shg_id)}</td>
               <td className="muted">{l.requested_date}</td>
               <td><StatusChip status="Pending" /></td>
