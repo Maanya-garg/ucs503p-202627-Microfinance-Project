@@ -3,6 +3,8 @@
 UCS503P Software Engineering project (2026-27 ODD), Thapar Institute of
 Engineering and Technology.
 
+Docs site (proposal, journals, criteria): https://shreesh1802.github.io/ucs503p-202627-Microfinance-Project/
+
 **Team:**
 
 | Name | Roll No. |
