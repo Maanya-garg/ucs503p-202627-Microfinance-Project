@@ -1,30 +1,30 @@
 :root {
   color-scheme: light;
 
-  /* Brand -- docs/DESIGN_SYSTEM.md §6 */
-  --primary: #0B3D6B;
-  --primary-hover: #082B4A;
-  --primary-tint: #E8F0F8;
-  --secondary: #8E1B2E;
-  --secondary-tint: #FBEAEC;
-  --accent: #C4701A;
-  --accent-tint: #FBF0E2;
+  /* Brand -- softened from docs/DESIGN_SYSTEM.md §6 (muted, low-saturation tones) */
+  --primary: #5B7C99;
+  --primary-hover: #46647E;
+  --primary-tint: #EAF0F5;
+  --secondary: #B27682;
+  --secondary-tint: #F7ECEE;
+  --accent: #C99A63;
+  --accent-tint: #F7EFE2;
 
-  /* Neutrals */
-  --text-primary: #14181C;
-  --text-secondary: #3F4750;
-  --text-muted: #6B7280;
-  --surface-1: #FFFFFF;
-  --surface-2: #F4F6F8;
-  --border: #D3D9DF;
-  --gridline: #E2E6EA;
+  /* Neutrals -- warm, soft off-white ground instead of stark white/navy */
+  --text-primary: #33322E;
+  --text-secondary: #5C5A54;
+  --text-muted: #83807A;
+  --surface-1: #FDFCFA;
+  --surface-2: #F3F1EC;
+  --border: #E3E0D8;
+  --gridline: #EAE7E0;
 
-  /* Status (always pair with icon+label, never color alone) */
-  --status-approved: #1B7A3D;     --status-approved-bg: #E7F5EC;
-  --status-pending: #9A6300;      --status-pending-bg: #FDF3D9;
-  --status-rejected: #A21C2E;     --status-rejected-bg: #FBE9EA;
-  --status-flagged: #B3540A;      --status-flagged-bg: #FCEEE0;
-  --status-info: #0B3D6B;         --status-info-bg: #E8F0F8;
+  /* Status (always pair with icon+label, never color alone) -- muted tones */
+  --status-approved: #4C8A63;     --status-approved-bg: #EAF3EC;
+  --status-pending: #B08A3E;      --status-pending-bg: #F8F1DF;
+  --status-rejected: #B36672;     --status-rejected-bg: #F6EBEC;
+  --status-flagged: #BF8C5C;      --status-flagged-bg: #F7EEE1;
+  --status-info: #5B7C99;         --status-info-bg: #EAF0F5;
 
   /* Typography */
   --font-sans: "Noto Sans", "Noto Sans Devanagari", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -65,37 +65,37 @@
   --diverging-pos: var(--status-approved);
   --diverging-neg: var(--status-rejected);
   --diverging-mid: var(--surface-2);
-  --seq-100: #cde2fb; --seq-200: #9ec5f4; --seq-300: #6da7ec; --seq-400: #3987e5;
-  --seq-500: #256abf; --seq-600: #184f95; --seq-700: #0d366b;
+  --seq-100: #E2EAF1; --seq-200: #C2D3E1; --seq-300: #A1BBCF; --seq-400: #81A3BD;
+  --seq-500: #648CA9; --seq-600: #4D7089; --seq-700: #3A566B;
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --primary: #6FA8DC; --primary-hover: #8FBEE6; --primary-tint: #10253A;
-  --secondary: #E38A96; --secondary-tint: #3A1216;
-  --accent: #E3A64B; --accent-tint: #3A2409;
-  --text-primary: #F1F4F7; --text-secondary: #C3CBD3; --text-muted: #93A0AC;
-  --surface-1: #0F1B29; --surface-2: #0A1420; --border: #24303C; --gridline: #1C2732;
-  --status-approved: #4CAF6D; --status-approved-bg: #123420;
-  --status-pending: #E3B341;  --status-pending-bg: #3A2C05;
-  --status-rejected: #E4677A; --status-rejected-bg: #3A1216;
-  --status-flagged: #E39056;  --status-flagged-bg: #3A2409;
-  --status-info: #6FA8DC;     --status-info-bg: #10253A;
+  --primary: #93B2C9; --primary-hover: #A9C2D5; --primary-tint: #263340;
+  --secondary: #D2A3AB; --secondary-tint: #3A2B2E;
+  --accent: #D3B384; --accent-tint: #392F22;
+  --text-primary: #E9E6E0; --text-secondary: #C6C2BA; --text-muted: #98948C;
+  --surface-1: #26262A; --surface-2: #1E1E22; --border: #38373A; --gridline: #302F32;
+  --status-approved: #7FB894; --status-approved-bg: #223027;
+  --status-pending: #D3B26C;  --status-pending-bg: #332C1B;
+  --status-rejected: #CF9BA2; --status-rejected-bg: #332527;
+  --status-flagged: #CFAA80;  --status-flagged-bg: #332B1F;
+  --status-info: #93B2C9;     --status-info-bg: #263340;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --primary: #6FA8DC; --primary-hover: #8FBEE6; --primary-tint: #10253A;
-    --secondary: #E38A96; --secondary-tint: #3A1216;
-    --accent: #E3A64B; --accent-tint: #3A2409;
-    --text-primary: #F1F4F7; --text-secondary: #C3CBD3; --text-muted: #93A0AC;
-    --surface-1: #0F1B29; --surface-2: #0A1420; --border: #24303C; --gridline: #1C2732;
-    --status-approved: #4CAF6D; --status-approved-bg: #123420;
-    --status-pending: #E3B341;  --status-pending-bg: #3A2C05;
-    --status-rejected: #E4677A; --status-rejected-bg: #3A1216;
-    --status-flagged: #E39056;  --status-flagged-bg: #3A2409;
-    --status-info: #6FA8DC;     --status-info-bg: #10253A;
+    --primary: #93B2C9; --primary-hover: #A9C2D5; --primary-tint: #263340;
+    --secondary: #D2A3AB; --secondary-tint: #3A2B2E;
+    --accent: #D3B384; --accent-tint: #392F22;
+    --text-primary: #E9E6E0; --text-secondary: #C6C2BA; --text-muted: #98948C;
+    --surface-1: #26262A; --surface-2: #1E1E22; --border: #38373A; --gridline: #302F32;
+    --status-approved: #7FB894; --status-approved-bg: #223027;
+    --status-pending: #D3B26C;  --status-pending-bg: #332C1B;
+    --status-rejected: #CF9BA2; --status-rejected-bg: #332527;
+    --status-flagged: #CFAA80;  --status-flagged-bg: #332B1F;
+    --status-info: #93B2C9;     --status-info-bg: #263340;
   }
 }
 
