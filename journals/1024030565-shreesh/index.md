@@ -3,7 +3,7 @@
 Roll No. 1024030565
 Name: Shreesh Gupta
 
-+  [...]
++  [W1 : Role-based redesign, payments, and CI/CD debugging](./w1-role-based-redesign.md)
 
 <!--
   Add one entry per week, e.g.:
