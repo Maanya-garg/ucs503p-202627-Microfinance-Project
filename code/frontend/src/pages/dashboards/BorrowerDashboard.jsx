@@ -370,7 +370,6 @@ export default function BorrowerDashboard() {
   const { data: offers, reload: reloadOffers } = useApi(() => api.listOffers({ individual_id: auth.id }, token), [auth.id])
   const { data: requests, reload: reloadRequests } = useApi(() => api.listLoanRequests({ individual_id: auth.id }, token), [auth.id])
   const { data: eligibility } = useApi(() => api.eligibleLendersFor(auth.id, token), [auth.id])
-  const [recomputing, setRecomputing] = useState(false)
 
   const handleDecideOffer = async (offerId, accept) => {
     try {
@@ -396,18 +395,6 @@ export default function BorrowerDashboard() {
       await reloadRequests()
     } catch (e) {
       alert(e.message)
-    }
-  }
-
-  const handleRecompute = async () => {
-    setRecomputing(true)
-    try {
-      await api.recomputeScore(auth.id, token)
-      await reload()
-    } catch (e) {
-      alert(e.message)
-    } finally {
-      setRecomputing(false)
     }
   }
 
@@ -441,9 +428,10 @@ export default function BorrowerDashboard() {
             {detail.monthly_income?.toLocaleString('en-IN')} &middot; bank account:{' '}
             {detail.has_bank_account ? 'yes' : 'no'}
           </p>
-          <button className="btn primary" onClick={handleRecompute} disabled={recomputing} style={{ marginTop: 8 }}>
-            {recomputing ? 'Recomputing...' : 'Recompute my score'}
-          </button>
+          <p className="muted small" style={{ marginTop: 8 }}>
+            Your score updates automatically after each repayment -- there's no manual recompute
+            (that's an admin-only operation).
+          </p>
         </div>
 
         <div className="card">
