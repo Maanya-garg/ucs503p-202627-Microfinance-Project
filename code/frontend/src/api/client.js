@@ -9,13 +9,20 @@ async function request(path, options = {}) {
   })
   if (!res.ok) {
     let detail = res.statusText
+    let body = null
     try {
-      const body = await res.json()
-      detail = body.detail || JSON.stringify(body)
+      body = await res.json()
+      const d = body.detail !== undefined ? body.detail : body
+      detail = typeof d === 'string' ? d : JSON.stringify(d)
     } catch {
       // ignore -- fall back to statusText
     }
-    throw new Error(`${res.status} ${detail}`)
+    const err = new Error(`${res.status} ${detail}`)
+    // Structured error bodies (e.g. payments' insufficient_funds shape) are
+    // exposed here so callers don't need to regex-parse err.message.
+    err.status = res.status
+    err.body = body && (body.detail !== undefined ? body.detail : body)
+    throw err
   }
   if (res.status === 204) return null
   return res.json()
@@ -108,4 +115,14 @@ export const api = {
     request(`/api/loan-requests/${requestId}/withdraw`, { method: 'POST', token }),
   decideLoanRequest: (requestId, payload, token) =>
     request(`/api/loan-requests/${requestId}/decide`, { method: 'POST', token, body: JSON.stringify(payload) }),
+  retargetLoanRequest: (requestId, targetLenderId, token) =>
+    request(`/api/loan-requests/${requestId}/retarget`, {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ target_lender_id: targetLenderId ?? null }),
+    }),
+
+  // ---------------------------------------------------------------- payments
+  dueSummary: (individualId, token) => request(`/api/payments/due-summary?individual_id=${individualId}`, { token }),
+  payLoan: (loanId, token) => request('/api/payments/pay', { method: 'POST', token, body: JSON.stringify({ loan_id: loanId }) }),
 }

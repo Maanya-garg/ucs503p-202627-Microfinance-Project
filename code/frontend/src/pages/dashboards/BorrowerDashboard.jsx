@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import Breadcrumb from '../../components/Breadcrumb'
@@ -13,7 +14,7 @@ function LoansTable({ loans }) {
   return (
     <table>
       <thead>
-        <tr><th>Principal</th><th>Rate</th><th>Tenure</th><th>Disbursed</th><th>Status</th><th>Repayments</th></tr>
+        <tr><th>Principal</th><th>Rate</th><th>Tenure</th><th>Disbursed</th><th>Status</th><th>Repayments</th><th></th></tr>
       </thead>
       <tbody>
         {loans.map((l) => (
@@ -24,10 +25,82 @@ function LoansTable({ loans }) {
             <td>{l.disbursement_date}</td>
             <td><StatusChip status={l.status} /></td>
             <td>{l.n_repayment_events}</td>
+            <td>
+              {l.status === 'Active' && (
+                <Link className="btn primary" to="/borrower/repay">Repay</Link>
+              )}
+            </td>
           </tr>
         ))}
       </tbody>
     </table>
+  )
+}
+
+/** Lender picker: broadcast (default, unchanged behavior) or a specific
+ * eligible lender -- per docs/DESIGN_PAYMENTS.md §2. */
+function LenderPicker({ eligibility, mode, setMode, selectedLenderId, setSelectedLenderId }) {
+  const lenders = eligibility?.lenders || []
+  const noneEligible = eligibility && lenders.length === 0
+
+  return (
+    <div>
+      <p className="section-subheading">Choose a Lender</p>
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 8 }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <input
+            type="radio"
+            name="lender-mode"
+            checked={mode === 'broadcast'}
+            onChange={() => setMode('broadcast')}
+          />
+          Broadcast to all eligible lenders
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <input
+            type="radio"
+            name="lender-mode"
+            checked={mode === 'specific'}
+            onChange={() => setMode('specific')}
+            disabled={noneEligible}
+            title={noneEligible ? 'No lenders currently meet the eligibility criteria for this request.' : undefined}
+          />
+          Choose a specific lender
+        </label>
+      </div>
+
+      {mode === 'specific' && (
+        noneEligible ? (
+          <div className="card notice-banner" style={{ padding: 12 }}>
+            No lenders currently meet the eligibility criteria for this request. You can still broadcast to all
+            eligible lenders -- matches may appear as your request is reviewed.
+          </div>
+        ) : (
+          <div className="lender-picker-list">
+            {lenders.map((l) => (
+              <label key={l.id} className={`lender-row${selectedLenderId === l.id ? ' selected' : ''}`}>
+                <input
+                  type="radio"
+                  name="lender"
+                  checked={selectedLenderId === l.id}
+                  onChange={() => setSelectedLenderId(l.id)}
+                />
+                <div className="lender-row-main">
+                  <span className="lender-name">{l.name}</span>
+                </div>
+                <span className="status-chip status-chip-approved"><span aria-hidden="true">●</span> ELIGIBLE</span>
+              </label>
+            ))}
+          </div>
+        )
+      )}
+
+      <p className="small muted" style={{ marginTop: 8 }}>
+        {mode === 'specific' && selectedLenderId
+          ? `Only ${lenders.find((l) => l.id === selectedLenderId)?.name} will see this request.`
+          : 'Every currently eligible lender will see this request.'}
+      </p>
+    </div>
   )
 }
 
@@ -36,19 +109,33 @@ function RequestLoanForm({ individualId, token, onCreated }) {
   const [principal, setPrincipal] = useState(15000)
   const [tenure, setTenure] = useState(12)
   const [purpose, setPurpose] = useState('')
+  const [mode, setMode] = useState('broadcast')
+  const [selectedLenderId, setSelectedLenderId] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
   const submit = async (e) => {
     e.preventDefault()
-    setBusy(true)
     setError('')
+    if (mode === 'specific' && !selectedLenderId) {
+      setError('Pick a lender from the list, or switch back to broadcast.')
+      return
+    }
+    setBusy(true)
     try {
       await api.createLoanRequest(
-        { individual_id: individualId, principal: Number(principal), tenure: Number(tenure), purpose: purpose || undefined },
+        {
+          individual_id: individualId,
+          principal: Number(principal),
+          tenure: Number(tenure),
+          purpose: purpose || undefined,
+          target_lender_id: mode === 'specific' ? selectedLenderId : undefined,
+        },
         token,
       )
       setPurpose('')
+      setMode('broadcast')
+      setSelectedLenderId(null)
       await onCreated()
     } catch (err) {
       setError(err.message)
@@ -71,22 +158,63 @@ function RequestLoanForm({ individualId, token, onCreated }) {
           <input type="number" min="1" value={principal} onChange={(e) => setPrincipal(e.target.value)} style={{ width: 110 }} title="Principal (Rs.)" />
           <input type="number" min="1" value={tenure} onChange={(e) => setTenure(e.target.value)} style={{ width: 90 }} title="Tenure (months)" />
           <input placeholder="Purpose (optional)" value={purpose} onChange={(e) => setPurpose(e.target.value)} style={{ flex: 1, minWidth: 160 }} />
-          <button className="btn primary" type="submit" disabled={busy || !principal || !tenure}>
-            {busy ? 'Requesting...' : 'Request loan'}
-          </button>
         </div>
+
+        <LenderPicker
+          eligibility={eligibility}
+          mode={mode}
+          setMode={setMode}
+          selectedLenderId={selectedLenderId}
+          setSelectedLenderId={setSelectedLenderId}
+        />
+
+        <button className="btn primary" type="submit" disabled={busy || !principal || !tenure || (mode === 'specific' && !selectedLenderId)} style={{ marginTop: 12 }}>
+          {busy ? 'Requesting...' : 'Request loan'}
+        </button>
         {error && <div className="error-banner" style={{ marginTop: 10, marginBottom: 0 }}>{error}</div>}
       </form>
     </div>
   )
 }
 
-function RequestsTable({ requests, onWithdraw }) {
+/** Inline re-target affordance for a Pending targeted request -- keeps a
+ * request that's been declined by its sole target from being a dead end
+ * (docs/API_CONTRACT_PAYMENTS.md §3.1/§3.4/§5.1). Shown for any Pending
+ * request that currently has a target_lender_id set, since the summary
+ * shape doesn't expose a separate "declined by target" flag. */
+function RetargetControl({ request, eligibleLenders, onRetarget }) {
+  const [lenderId, setLenderId] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const submit = async () => {
+    setBusy(true)
+    try {
+      await onRetarget(request.id, lenderId ? Number(lenderId) : null)
+      setLenderId('')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div style={{ display: 'flex', gap: 6, marginTop: 6, alignItems: 'center' }}>
+      <select value={lenderId} onChange={(e) => setLenderId(e.target.value)} style={{ minWidth: 140 }}>
+        <option value="">Broadcast to all</option>
+        {eligibleLenders.map((l) => (
+          <option key={l.id} value={l.id}>{l.name}</option>
+        ))}
+      </select>
+      <button className="btn" disabled={busy} onClick={submit}>{busy ? 'Retargeting...' : 'Re-target'}</button>
+    </div>
+  )
+}
+
+function RequestsTable({ requests, eligibleLenders, onWithdraw, onRetarget }) {
   if (!requests?.length) return <p className="muted small">You haven't requested a loan yet.</p>
   return (
     <table>
       <thead>
-        <tr><th>Principal</th><th>Tenure</th><th>Purpose</th><th>Status</th><th>Lender</th><th></th></tr>
+        <tr><th>Principal</th><th>Tenure</th><th>Purpose</th><th>Status</th><th>Lender</th><th>Target</th><th></th></tr>
       </thead>
       <tbody>
         {requests.map((r) => (
@@ -96,9 +224,15 @@ function RequestsTable({ requests, onWithdraw }) {
             <td className="muted">{r.purpose || '--'}</td>
             <td><StatusChip status={r.status} /></td>
             <td className="muted">{r.decided_by_lender_name || '--'}</td>
+            <td className="muted">{r.target_lender_name || 'Any eligible lender'}</td>
             <td>
               {r.status === 'Pending' && (
-                <button className="btn critical" onClick={() => onWithdraw(r.id)}>Withdraw</button>
+                <>
+                  <button className="btn critical" onClick={() => onWithdraw(r.id)}>Withdraw</button>
+                  {r.target_lender_id && (
+                    <RetargetControl request={r} eligibleLenders={eligibleLenders} onRetarget={onRetarget} />
+                  )}
+                </>
               )}
             </td>
           </tr>
@@ -235,6 +369,7 @@ export default function BorrowerDashboard() {
   const { data: history } = useApi(() => api.scoreHistory(auth.id, token), [auth.id])
   const { data: offers, reload: reloadOffers } = useApi(() => api.listOffers({ individual_id: auth.id }, token), [auth.id])
   const { data: requests, reload: reloadRequests } = useApi(() => api.listLoanRequests({ individual_id: auth.id }, token), [auth.id])
+  const { data: eligibility } = useApi(() => api.eligibleLendersFor(auth.id, token), [auth.id])
   const [recomputing, setRecomputing] = useState(false)
 
   const handleDecideOffer = async (offerId, accept) => {
@@ -249,6 +384,15 @@ export default function BorrowerDashboard() {
   const handleWithdrawRequest = async (requestId) => {
     try {
       await api.withdrawLoanRequest(requestId, token)
+      await reloadRequests()
+    } catch (e) {
+      alert(e.message)
+    }
+  }
+
+  const handleRetargetRequest = async (requestId, targetLenderId) => {
+    try {
+      await api.retargetLoanRequest(requestId, targetLenderId, token)
       await reloadRequests()
     } catch (e) {
       alert(e.message)
@@ -352,7 +496,12 @@ export default function BorrowerDashboard() {
         <div className="card">
           <h2>Your loan requests</h2>
           <p className="card-sub">Requests you've made, and how lenders responded.</p>
-          <RequestsTable requests={requests} onWithdraw={handleWithdrawRequest} />
+          <RequestsTable
+            requests={requests}
+            eligibleLenders={eligibility?.lenders || []}
+            onWithdraw={handleWithdrawRequest}
+            onRetarget={handleRetargetRequest}
+          />
         </div>
       </div>
 

@@ -597,6 +597,102 @@ input, select {
   min-width: 180px;
 }
 
+/* --------------------------------------------------------- lender picker */
+
+.lender-picker-list {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  padding: 12px;
+  margin-top: 8px;
+}
+
+.lender-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--gridline);
+  cursor: pointer;
+}
+
+.lender-row:last-child {
+  border-bottom: none;
+}
+
+.lender-row:hover {
+  background: var(--primary-tint);
+}
+
+.lender-row.selected {
+  background: var(--primary-tint);
+  border-left: 3px solid var(--primary);
+  padding-left: 9px;
+}
+
+.lender-row-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.lender-name {
+  font-weight: 600;
+  font-size: var(--fs-base);
+  color: var(--text-primary);
+}
+
+/* -------------------------------------------------------------- payments */
+
+.demo-payment-badge {
+  background: var(--accent-tint);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  text-align: center;
+  padding: 6px 10px;
+  margin-bottom: 14px;
+}
+
+.repay-page {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.repay-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--gridline);
+  gap: 8px;
+}
+
+.repay-row:last-child {
+  border-bottom: none;
+}
+
+.repay-amount {
+  font-size: var(--fs-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.repay-success-strip {
+  background: var(--status-approved-bg);
+  border: 1px solid var(--status-approved);
+  color: var(--status-approved);
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  font-size: var(--fs-sm);
+  margin-top: 8px;
+}
+
 .tabs {
   display: flex;
   gap: 4px;

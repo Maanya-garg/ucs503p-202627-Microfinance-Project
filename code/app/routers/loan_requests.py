@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.models import Individual, LoanRequest
 from app.routers.auth import get_current_actor, get_current_individual, get_current_lender
-from app.schemas import LoanRequestDecisionIn, LoanRequestIn
+from app.schemas import LoanRequestDecisionIn, LoanRequestIn, RetargetIn
 from app.services import loan_request_service
 from app.services.loan_request_service import LoanRequestError
 
@@ -25,6 +25,8 @@ def _summary(r: LoanRequest):
         "decided_by_lender_id": r.decided_by_lender_id,
         "decided_by_lender_name": r.decided_by_lender.name if r.decided_by_lender else None,
         "resulting_loan_id": r.resulting_loan_id,
+        "target_lender_id": r.target_lender_id,
+        "target_lender_name": r.target_lender.name if r.target_lender else None,
     }
 
 
@@ -95,7 +97,27 @@ def create_request(body: LoanRequestIn, db: Session = Depends(get_db),
         req = loan_request_service.create_request(
             db, individual_id=current.id, principal=body.principal,
             tenure=body.tenure, purpose=body.purpose,
+            target_lender_id=body.target_lender_id,
         )
+        db.commit()
+    except LoanRequestError as e:
+        db.rollback()
+        raise HTTPException(400, str(e))
+    return _summary(req)
+
+
+@router.post("/{request_id}/retarget")
+def retarget(request_id: int, body: RetargetIn, db: Session = Depends(get_db),
+             current: Individual = Depends(get_current_individual)):
+    """Borrower only -- must own the request. Redirects a Pending request to
+    a different (or no) target lender (docs/API_CONTRACT_PAYMENTS.md §3.4)."""
+    req = db.get(LoanRequest, request_id)
+    if req is None:
+        raise HTTPException(404, f"Loan request {request_id} not found")
+    if req.individual_id != current.id:
+        raise HTTPException(403, "You can only retarget your own loan requests.")
+    try:
+        req = loan_request_service.retarget_request(db, request_id, current.id, body.target_lender_id)
         db.commit()
     except LoanRequestError as e:
         db.rollback()

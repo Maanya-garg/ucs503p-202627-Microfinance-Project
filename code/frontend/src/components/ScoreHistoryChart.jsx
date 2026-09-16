@@ -32,7 +32,7 @@ export default function ScoreHistoryChart({ history }) {
 
   return (
     <ResponsiveContainer width="100%" height={140}>
-      <LineChart data={data} margin={{ top: 8, right: 12, left: -18, bottom: 0 }}>
+      <LineChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
         <XAxis
           dataKey="date"
           tickFormatter={fmtDate}

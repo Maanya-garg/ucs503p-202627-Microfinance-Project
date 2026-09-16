@@ -20,11 +20,28 @@ export default function Header() {
       return false
     }
   })
+  // index.html already forces data-theme="light" before first paint, so
+  // every fresh visit opens light regardless of system preference -- this
+  // just tracks whether the toggle below has switched it to dark this
+  // session (not persisted, by design: it resets to light on next visit).
+  const [dark, setDark] = useState(() => {
+    try {
+      return document.documentElement.getAttribute('data-theme') === 'dark'
+    } catch {
+      return false
+    }
+  })
 
   const toggleContrast = () => {
     const next = !contrast
     setContrast(next)
     document.documentElement.setAttribute('data-contrast', next ? 'high' : 'normal')
+  }
+
+  const toggleDark = () => {
+    const next = !dark
+    setDark(next)
+    document.documentElement.setAttribute('data-theme', next ? 'dark' : 'light')
   }
 
   const handleLogout = async () => {
@@ -46,6 +63,9 @@ export default function Header() {
             <button type="button" className="utility-link" aria-label="Increase text size">A+</button>
             <button type="button" className="utility-link" onClick={toggleContrast} aria-pressed={contrast}>
               High contrast
+            </button>
+            <button type="button" className="utility-link" onClick={toggleDark} aria-pressed={dark}>
+              {dark ? 'Light mode' : 'Dark mode'}
             </button>
             <button type="button" className="utility-link">Screen Reader Access</button>
           </div>

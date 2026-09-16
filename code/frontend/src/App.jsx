@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import AdminDashboard from './pages/dashboards/AdminDashboard'
 import BorrowerDashboard from './pages/dashboards/BorrowerDashboard'
 import LenderDashboard from './pages/dashboards/LenderDashboard'
+import RepayPage from './pages/dashboards/RepayPage'
 import ShgDashboard from './pages/dashboards/ShgDashboard'
 import HomeView from './pages/HomeView'
 import LoginPage from './pages/login/LoginPage'
@@ -28,6 +29,14 @@ export default function App() {
             element={
               <ProtectedRoute role="borrower">
                 <BorrowerDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/borrower/repay"
+            element={
+              <ProtectedRoute role="borrower">
+                <RepayPage />
               </ProtectedRoute>
             }
           />

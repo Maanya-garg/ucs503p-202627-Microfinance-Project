@@ -44,9 +44,18 @@ class LoanRequestIn(BaseModel):
     principal: float
     tenure: int
     purpose: str | None = None
+    target_lender_id: int | None = None
 
 
 class LoanRequestDecisionIn(BaseModel):
     lender_id: int
     approve: bool
     rate: float | None = None  # required when approve=True
+
+
+class RetargetIn(BaseModel):
+    target_lender_id: int | None = None
+
+
+class PayIn(BaseModel):
+    loan_id: int

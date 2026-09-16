@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import (
     admin, anomalies, auth, dashboard, geo, individuals, lenders, links, loan_requests,
-    offers, shgs,
+    offers, payments, shgs,
 )
 
 app = FastAPI(
@@ -30,6 +30,7 @@ app.include_router(lenders.router)
 app.include_router(links.router)
 app.include_router(offers.router)
 app.include_router(loan_requests.router)
+app.include_router(payments.router)
 app.include_router(geo.router)
 app.include_router(anomalies.router)
 app.include_router(dashboard.router)

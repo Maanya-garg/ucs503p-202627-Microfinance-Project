@@ -101,6 +101,10 @@ class Individual(Base):
     # before this existed doesn't break, though data_gen always sets it now).
     password_hash = Column(String(150), nullable=True)
 
+    # Dummy payment-gateway balance for live repayments (docs/API_CONTRACT_PAYMENTS.md §1.1).
+    # Nullable, same pattern as password_hash -- treat NULL as 0.0 everywhere read.
+    wallet_balance = Column(Float, nullable=True)
+
     district = relationship("District", back_populates="individuals")
     shg = relationship("SHG", back_populates="members")
     savings_records = relationship("SavingsRecord", back_populates="individual")
@@ -354,9 +358,13 @@ class LoanRequest(Base):
     decided_date = Column(DateTime, nullable=True)
     decided_by_lender_id = Column(Integer, ForeignKey("lenders.id"), nullable=True, index=True)
     resulting_loan_id = Column(Integer, ForeignKey("loans.id"), nullable=True)
+    # NULL = broadcast (default, unchanged historical behavior). Set = only
+    # this lender sees the request in their queue (docs/API_CONTRACT_PAYMENTS.md §1.2).
+    target_lender_id = Column(Integer, ForeignKey("lenders.id"), nullable=True, index=True)
 
     individual = relationship("Individual")
-    decided_by_lender = relationship("Lender")
+    decided_by_lender = relationship("Lender", foreign_keys=[decided_by_lender_id])
+    target_lender = relationship("Lender", foreign_keys=[target_lender_id])
     resulting_loan = relationship("Loan")
     declines = relationship("LoanRequestDecline", back_populates="request", cascade="all, delete-orphan")
 

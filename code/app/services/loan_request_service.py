@@ -58,8 +58,19 @@ def eligible_lenders_for_individual(db: Session, individual: Individual) -> list
     return results
 
 
+def _validate_target_lender(db: Session, ind: Individual, target_lender_id: int) -> None:
+    """Shared by create_request and retarget_request -- validate the lender
+    is currently in the borrower's eligible-lenders list (reused verbatim,
+    not reimplemented). Raises LoanRequestError if not eligible."""
+    eligible = eligible_lenders_for_individual(db, ind)
+    if not any(l.id == target_lender_id for l in eligible):
+        raise LoanRequestError(
+            "That lender isn't currently eligible for you -- pick from your eligible-lenders list."
+        )
+
+
 def create_request(db: Session, individual_id: int, principal: float, tenure: int,
-                    purpose: str | None = None) -> LoanRequest:
+                    purpose: str | None = None, target_lender_id: int | None = None) -> LoanRequest:
     ind = db.get(Individual, individual_id)
     if ind is None:
         raise LoanRequestError(f"Individual {individual_id} not found")
@@ -70,12 +81,47 @@ def create_request(db: Session, individual_id: int, principal: float, tenure: in
     if ind.latest_score is None:
         raise LoanRequestError("This borrower hasn't been scored yet -- recompute their score before requesting a loan")
 
+    if target_lender_id is not None:
+        _validate_target_lender(db, ind, target_lender_id)
+
     req = LoanRequest(
         individual_id=individual_id, requested_principal=principal,
         requested_tenure=tenure, purpose=purpose, status="Pending",
-        created_date=datetime.utcnow(),
+        created_date=datetime.utcnow(), target_lender_id=target_lender_id,
     )
     db.add(req)
+    db.flush()
+    return req
+
+
+def retarget_request(db: Session, request_id: int, individual_id: int,
+                      target_lender_id: int | None) -> LoanRequest:
+    """Borrower-only: redirect a Pending request to a different (or no)
+    target lender. Deletes this borrower's own prior LoanRequestDecline row
+    for this request if one exists for the new target, so re-targeting back
+    to a lender who declined a different prior target isn't blocked by a
+    stale decline (docs/API_CONTRACT_PAYMENTS.md §3.1/§3.4)."""
+    req = db.get(LoanRequest, request_id)
+    if req is None:
+        raise LoanRequestError(f"Loan request {request_id} not found")
+    if req.individual_id != individual_id:
+        raise LoanRequestError("You can only retarget your own loan requests.")
+    if req.status != "Pending":
+        raise LoanRequestError(f"Loan request {request_id} already decided (status={req.status}) -- can't retarget")
+
+    ind = req.individual
+    if target_lender_id is not None:
+        _validate_target_lender(db, ind, target_lender_id)
+        existing_decline = (
+            db.query(LoanRequestDecline)
+            .filter(LoanRequestDecline.request_id == request_id,
+                    LoanRequestDecline.lender_id == target_lender_id)
+            .first()
+        )
+        if existing_decline is not None:
+            db.delete(existing_decline)
+
+    req.target_lender_id = target_lender_id
     db.flush()
     return req
 
@@ -181,6 +227,8 @@ def requests_for_lender(db: Session, lender_id: int) -> list[LoanRequest]:
     for req in db.query(LoanRequest).order_by(LoanRequest.id.desc()).all():
         if req.status == "Pending":
             if req.id in declined_ids:
+                continue
+            if req.target_lender_id is not None and req.target_lender_id != lender_id:
                 continue
             if not _lender_eligible_for_individual(lender, req.individual, approved_shg_ids):
                 continue
