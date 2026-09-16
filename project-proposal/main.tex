@@ -38,24 +38,32 @@
 
 % -----------------------------------------------------
 
-\title{Grievance-Resolution System for a Tier-2/3 City}
+\title{CreditSetu: A Dual-Path Credit Scoring \& Lending Marketplace for Microfinance}
 
 \BvrSetLabInstructor{Dr. Raghav B. Venkataramaiyer}
 
 \BvrSubtitle{%
   Project Proposal for UCS503P  \\
   Submitted to: \BvrLabInstructorValue \\ \bfseries
-  Thapar Institute of Engineering and Technology% 
+  Thapar Institute of Engineering and Technology%
 }
 
 \author{
-  Vidya Vaidyanathan, CSED%
-  \thanks{Roll No: \texttt{1024030xxx}, %
-    Email: \texttt{vvaidhanathan\_be24\@thapar.edu}}
-  \and 
-  Bhanurekha Ganesan, CSED%
-  \thanks{Roll No: \texttt{1024030xxx}, %
-    Email: \texttt{bganesan\_be24\@thapar.edu}}
+  Maanya Garg, CSED%
+  \thanks{Roll No: \texttt{1024030564}, %
+    Email: \texttt{<TODO: confirm official Thapar email>}}
+  \and
+  Kashvi Bansal, CSED%
+  \thanks{Roll No: \texttt{1024030563}, %
+    Email: \texttt{<TODO: confirm official Thapar email>}}
+  \and
+  Shreesh Gupta, CSED%
+  \thanks{Roll No: \texttt{1024030565}, %
+    Email: \texttt{<TODO: confirm official Thapar email>}}
+  \and
+  Shivam Raj, CSED%
+  \thanks{Roll No: \texttt{1024031140}, %
+    Email: \texttt{<TODO: confirm official Thapar email>}}
 }
 
 \date{\today}
@@ -65,178 +73,367 @@
 
 \section{Higher-order goal%
   \BvrHint{\ldots secondary framing}}
-This project aims to improve sustainable urban
-governance by reducing the time and effort required to
-resolve citizen issues. While the topic is broader than
-any single municipality, the immediate engineering
-objective is to translate \emph{efficient public
-  service delivery} into a measurable, deployable
-software solution.
+This project aims to widen access to formal credit for
+underserved borrowers in India -- particularly members
+of rural Self-Help Groups (SHGs) and independent
+borrowers who have no prior formal credit history. The
+immediate engineering objective is to translate
+\emph{trustworthy, explainable credit assessment} into a
+measurable, deployable software system that a
+microfinance lender could plausibly adopt.
 
 \section{Time-to-value %
 \BvrHint{\ldots primary heuristic}}
 \begin{itemize}[leftmargin=0.7cm]
-    \item We will deliver meaningful increments quickly by prototyping the core user workflow and validating it with users within a short iteration window.
-    \item We will prioritize fast feedback over perfection by using weekly iterations (and targeting CI-backed automation early) to reduce release friction.
-    \item Success is defined by what can be delivered and measured in the first iteration, then improved based on user feedback.
+    \item We deliver meaningful increments quickly: a
+    working synthetic-data pipeline, a trained scoring
+    model, and a queryable API were built and exercised
+    end-to-end before any UI existed.
+    \item We prioritize fast feedback over perfection by
+    validating each pipeline stage against real
+    (synthetic) data end-to-end -- training on real data,
+    scoring real individuals, hitting the live API,
+    and screenshotting the live frontend -- rather than
+    reading code and assuming correctness.
+    \item Success is defined by what can be delivered and
+    verified working in each iteration, then improved:
+    the scoring engine and open marketplace shipped first;
+    role-separated logins and authorization are the
+    current iteration.
 \end{itemize}
 
 \section{Problem Statement}
-Citizens in a tier-2/3 Indian city face delays and uncertainty when reporting local issues (e.g., streetlight outages, water leakage, garbage accumulation, road potholes). Common pain points include:
+Microfinance lending in India serves two kinds of
+borrowers very unevenly. Common pain points include:
 \begin{itemize}[leftmargin=0.7cm]
-    \item \textbf{Fragmentation:} complaints are often made via multiple channels (calls, social media, paper forms), causing lost context.
-    \item \textbf{Low transparency:} citizens cannot easily see the status of their complaint (e.g., ``received'', ``assigned'', ``in progress'', ``resolved'').
-    \item \textbf{Slow coordination:} departments/field teams lack a unified, trackable workflow with clear ownership.
-    \item \textbf{Poor data quality:} duplicate or incomplete reports force rework and extend resolution time.
+    \item \textbf{No credit history for new/independent
+    borrowers:} a borrower with no SHG affiliation and no
+    prior loans has nothing a lender can score against --
+    the classic cold-start problem.
+    \item \textbf{Opaque scoring:} where informal scoring
+    does exist (e.g. group-level trust), it rarely
+    explains \emph{why} a given score is what it is, which
+    undermines both borrower trust and lender diligence.
+    \item \textbf{No structured SHG-lender relationship:}
+    lenders either lend to anyone in a group or nobody --
+    there is no formal, auditable approve/reject linkage
+    between a specific SHG and a specific lender.
+    \item \textbf{Everyone sees everyone's data:} in an
+    open system, a borrower, a lender, and an SHG all see
+    the same undifferentiated data -- there is no
+    role-appropriate, access-controlled view for each
+    stakeholder.
 \end{itemize}
 
-\textbf{Why this matters now (contextual relevance):} In an urban setting with limited staff bandwidth, even small process improvements can noticeably reduce resolution delays and repeated submissions.
+\textbf{Why this matters now (contextual relevance):} SHG-based
+microfinance already operates at large scale in India; a
+system that lets a borrower's \emph{own} repayment history
+build their score, while still giving SHG members a fair
+trust-based head start, directly targets an active
+fairness and access gap in that ecosystem.
 
 \section{Proposed Solution %
 \BvrHint{\ldots Software Proposition}}
 \subsection{Overview}
-Build a \textbf{web-based} ``Grievance-to-Resolution'' system with the following components:
+Build a \textbf{web-based} dual-path credit scoring and
+lending-marketplace system, CreditSetu, with the
+following components:
 \begin{itemize}[leftmargin=0.7cm]
-    \item \textbf{Citizen submission portal:} users submit an issue with photo (optional), category, and locality/ward.
-    \item \textbf{Automated triage:} basic duplicate detection and completeness checks.
-    \item \textbf{Department workflow:} assign issues to relevant department/team and update statuses.
-    \item \textbf{Status transparency:} citizens track status and receive notifications when resolved.
-    \item \textbf{Admin/ops dashboard:} performance summaries (resolution time, backlog).
+    \item \textbf{Dual-path scoring engine:} an SHG-linked
+    borrower's score bootstraps from their group's track
+    record; an independent borrower starts from a flat,
+    lower base and builds purely from their own repayment
+    and savings behaviour.
+    \item \textbf{Explainable scoring:} an XGBoost
+    classifier with SHAP explanations, so every score
+    comes with a feature-level breakdown of why it is what
+    it is, not just a number.
+    \item \textbf{SHG-lender linkage:} lenders formally
+    request, and SHGs approve or reject, a lending
+    relationship -- not open lending to anyone.
+    \item \textbf{Loan marketplace:} lenders can make
+    offers to eligible borrowers, and borrowers can
+    directly request loans that are broadcast to every
+    lender they are currently eligible for.
+    \item \textbf{Role-separated access:} four distinct,
+    login-gated views -- Borrower, Lender, SHG, and
+    Admin -- each seeing only the data appropriate to that
+    role, enforced server-side rather than just hidden in
+    the UI.
 \end{itemize}
 
 \subsection{Core workflow}
 \begin{enumerate}[leftmargin=0.7cm]
-    \item Citizen creates a complaint and receives a complaint ID immediately.
-    \item System validates completeness and suggests possible duplicates (lightweight similarity on text/category and approximate location).
-    \item Department staff update status (Received $\rightarrow$ Assigned $\rightarrow$ In Progress $\rightarrow$ Resolved).
-    \item Citizen views status updates and resolution notes.
+    \item A borrower's repayment, savings, and (if
+    applicable) SHG-attendance history feeds a feature
+    pipeline.
+    \item The scoring engine blends a cold-start prior
+    (SHG or independent base) with the trained model's
+    output as repayment history accumulates.
+    \item Lenders discover SHGs and borrowers they are
+    formally linked to (or independents, who are open to
+    all lenders by design), and either make offers or
+    respond to borrower-initiated requests.
+    \item Every role logs into its own dashboard: a
+    borrower sees only their own score/history/suggestions
+    and their own SHG; a lender sees SHGs by area and its
+    own linked members and requests; an SHG sees its own
+    members and linked lenders; an admin sees read-only
+    platform-wide oversight.
 \end{enumerate}
 
-\subsection{Operational constraints for an educational, tier-2/3 setting}
+\subsection{Operational constraints for an educational
+setting}
 \begin{itemize}[leftmargin=0.7cm]
-    \item Keep the solution usable on low-to-mid range devices via responsive web design.
-    \item Avoid dependence on advanced research algorithms; focus on workflow, automation, and system correctness.
-    \item Design for deployability using common web hosting and managed databases.
+    \item Use synthetic but behaviourally realistic data
+    (no real borrower PII), generated and versioned as
+    part of the pipeline, not hand-curated.
+    \item Avoid dependence on novel research algorithms;
+    XGBoost + SHAP are mature, well-understood tools --
+    the engineering focus is the scoring pipeline, access
+    control, and marketplace correctness.
+    \item Design for deployability on common web hosting
+    (SQLite for the demo, a one-line \texttt{DATABASE\_URL}
+    swap to Postgres for concurrent production use).
 \end{itemize}
 
 \section{Solution Approach %
 \BvrHint{\ldots Engineering focus}}
-This is an engineering course project, so we focus on scalable administrative and workflow aspects rather than novel algorithm research.
+This is an engineering course project, so we focus on a
+correct, explainable, access-controlled pipeline rather
+than algorithmic novelty.
 
-\subsection{Duplicate/quality assistance %
+\subsection{Scoring pipeline %
 \BvrHint{\ldots non-research}}
-Duplicate detection will be heuristic-based:
 \begin{itemize}[leftmargin=0.7cm]
-    \item Normalize text (category + short description keywords).
-    \item Use a simple similarity measure (e.g., token overlap / TF-IDF cosine with threshold) without claiming state-of-the-art.
-    \item Show top candidate duplicates to staff for decision; never fully auto-delete or auto-reject.
+    \item Feature engineering turns each individual's
+    loans, repayments, savings, and SHG attendance into
+    features such as repayment rate, savings regularity,
+    and peer repayment rate.
+    \item An XGBoost classifier is trained on SHG-linked
+    individuals with sufficient repayment history,
+    predicting default risk; SHAP's \texttt{TreeExplainer}
+    attributes every prediction to its contributing
+    features.
+    \item A cold-start blend interpolates between a pure
+    prior (SHG bootstrap or independent base) and the
+    trained model's output as an individual accumulates
+    repayment events, so a score is never asked to
+    extrapolate from data it doesn't have.
 \end{itemize}
 
 \subsection{Web architecture %
 \BvrHint{\ldots web-based solution}}
-A typical 3-tier web architecture:
+A 3-tier web architecture:
 \begin{itemize}[leftmargin=0.7cm]
-    \item \textbf{Frontend:} responsive UI for citizens and staff (status pages, submission form, dashboard).
-    \item \textbf{Backend API:} authentication, complaint submission, status transitions, assignment logic.
-    \item \textbf{Database:} store users, complaints, status history, attachments metadata.
+    \item \textbf{Frontend:} a React (Vite) single-page
+    app with four role-gated dashboards and a public
+    landing page.
+    \item \textbf{Backend API:} FastAPI, with
+    bearer-token session auth per role and server-side
+    authorization scoping every query to the
+    authenticated caller's own identity.
+    \item \textbf{Database:} SQLAlchemy over SQLite (demo)
+    / Postgres (production), with an append-only score
+    history table so a borrower's score-over-time and its
+    SHAP explanation are always reconstructable.
 \end{itemize}
 
 \subsection{CI/CD and fast delivery enabler}
 CI/CD will be used to:
 \begin{itemize}[leftmargin=0.7cm]
-    \item Automatically build and run tests on every change.
-    \item Produce repeatable deployment artifacts to staging.
-    \item Enable safe and frequent releases of incremental features.
+    \item Automatically build and lint on every change.
+    \item Produce a repeatable, from-scratch pipeline run
+    (data generation $\to$ training $\to$ batch scoring
+    $\to$ serving) as the release artifact, not just a
+    code diff.
+    \item Enable safe, frequent releases of incremental
+    features (the role-separated login redesign is itself
+    one such increment, layered on a previously-working
+    open system).
 \end{itemize}
 
 \section{Evaluation Criterion %
 \BvrHint{\ldots measurable and attributable}}
-We define success using measurable metrics tied to the core workflow.
+We define success using measurable metrics tied to the
+core workflow.
 
 \subsection{Primary evaluation metric}
-\textbf{Time-to-acknowledgement (TTA):} time between complaint submission and ``Received/Assigned'' status creation in the system.
+\textbf{Access-control correctness:} the fraction of
+cross-role/cross-identity data-access attempts that are
+correctly rejected (401/403) rather than served.
 \begin{itemize}[leftmargin=0.7cm]
-    \item Target: median TTA $\le$ 2 hours during pilot window.
-    \item Attribution: measured from database timestamps (submission vs. first status update by staff).
+    \item Target: 100\% of out-of-scope requests (e.g. a
+    borrower fetching another borrower's data, or a lender
+    fetching an unlinked SHG's member list) are rejected.
+    \item Attribution: verified directly against the live
+    API with authenticated and unauthenticated requests
+    per role.
 \end{itemize}
 
 \subsection{Secondary evaluation metrics}
 \begin{itemize}[leftmargin=0.7cm]
-    \item \textbf{Resolution time reduction:} reduce time-to-resolved compared to baseline process (even if baseline is collected via survey).
-    \item \textbf{Duplicate rate:} percentage of complaints flagged as duplicates and resolved without rework.
-    \item \textbf{User clarity:} citizen-reported clarity of status using a simple 1--5 feedback question.
-    \item \textbf{Reliability:} availability of staging/production for login and submission during business hours (e.g., $\ge$ 99\% uptime in pilot).
+    \item \textbf{Explanation coverage:} percentage of
+    delivered scores that have a non-empty, correctly
+    normalised SHAP explanation (points sum to
+    \texttt{score - SCORE\_MIN}).
+    \item \textbf{Cold-start behaviour:} score assigned to
+    a borrower with zero repayment events is exactly the
+    configured prior (SHG bootstrap or independent base),
+    with no model call.
+    \item \textbf{Marketplace liveness:} lender
+    accept/reject decisions on a loan request are reflected
+    in both the lender's and the borrower's view without a
+    stale read.
+    \item \textbf{Lender reputation soundness:} a lender's
+    computed reputation score responds monotonically to a
+    lower offered interest rate relative to the platform
+    average, given the same activity level.
 \end{itemize}
 
 \subsection{Pilot validation plan %
 \BvrHint{\ldots high-level}}
 \begin{itemize}[leftmargin=0.7cm]
-    \item Recruit 10--20 pilot users (citizens) and 3--5 staff roles (department simulation if real staff unavailable).
-    \item Compare metrics before/after within the iteration window by logging baseline estimates via short interviews or existing process observations.
+    \item Exercise the full pipeline against realistic
+    synthetic data (over a thousand individuals, dozens of
+    SHGs, multiple lenders across several districts).
+    \item Validate each role's dashboard end-to-end in a
+    live browser session (not just unit tests) --
+    screenshotting and checking console/network errors
+    for each of the four logins.
 \end{itemize}
 
 \section{Scalability %
 \BvrHint{\ldots with foresight}}
-The proposition should scale in both theoretical and practical senses.
+The proposition should scale in both theoretical and
+practical senses.
 
 \begin{enumerate}[leftmargin=0.7cm]
-    \item \textbf{Scalable (theoretically):} The system should support growth in number of complaints and concurrent dashboard usage by:
+    \item \textbf{Scalable (theoretically):} the system
+    supports growth in individuals, SHGs, and lenders by:
     \begin{itemize}[leftmargin=0.7cm]
-        \item decoupling components (frontend/backend),
-        \item enabling pagination and indexing for common queries,
-        \item using stateless API design.
+        \item decoupling frontend and backend behind a
+        REST API,
+        \item indexing every foreign key (a gap we found
+        and fixed during the build),
+        \item paginating and server-side filtering list
+        endpoints instead of client-side filtering over one
+        page.
     \end{itemize}
-    
-    \item \textbf{Operationally deployable (practically):} The system should run on common web hosting:
+
+    \item \textbf{Operationally deployable (practically):}
+    the system runs on common web hosting:
     \begin{itemize}[leftmargin=0.7cm]
-        \item managed database,
-        \item containerized or platform-hosted deployment,
-        \item CI/CD pipeline for staging/production.
+        \item a one-line environment-variable swap from
+        SQLite to a managed Postgres instance,
+        \item stateless bearer-token sessions rather than
+        server-side sticky state,
+        \item CI/CD pipeline for repeatable
+        build/deploy.
     \end{itemize}
 \end{enumerate}
 
 \section{Engine availability heuristic}
-A mature set of ``engines'' (tooling/services) is available to implement this as a web-based project:
+A mature set of ``engines'' (tooling/services) is
+available to implement this project:
 \begin{itemize}[leftmargin=0.7cm]
-    \item Web framework for REST APIs and templated/reactive pages.
-    \item Managed relational or document database.
-    \item Authentication approach (token-based or session-based).
-    \item Object storage for optional attachments (or local storage for pilot).
-    \item Test framework for unit/integration tests.
-    \item CI runner and staging deployment target.
+    \item FastAPI for REST APIs, with automatic OpenAPI
+    docs.
+    \item SQLAlchemy ORM over SQLite/Postgres.
+    \item XGBoost and SHAP for the scoring model and its
+    explanations.
+    \item scikit-learn (k-means, isolation forest) for
+    geo-clustering and anomaly detection.
+    \item React + Vite for the frontend.
+    \item A token-based session-auth pattern (no new
+    dependency needed for a demo-scale system).
 \end{itemize}
-We will use these mature components to focus on workflow design, correctness, and measurement rather than inventing new infrastructure.
+We use these mature components to focus on pipeline
+correctness, explainability, and access control rather
+than inventing new infrastructure.
 
 \section{Project scope and deliverables %
 \BvrHint{\ldots iteration-friendly}}
-\subsection{Initial deliverable %
-\BvrHint{\ldots first iteration}}
+\subsection{Initial deliverable (shipped) %
+\BvrHint{\ldots first iterations}}
 \begin{itemize}[leftmargin=0.7cm]
-    \item Citizen submission form + complaint ID generation
-    \item Staff workflow: update status and assignment
-    \item Citizen status page: view timeline/history
-    \item Basic logging and timestamps for TTA measurement
-    \item CI: build + backend unit tests + linting
-    \item CD to staging with a single command or pipeline job
+    \item Synthetic data generation (individuals, SHGs,
+    lenders, loans, repayments, savings).
+    \item Trained XGBoost + SHAP scoring engine, with
+    cold-start bootstrap blending for both borrower paths.
+    \item SHG-lender linkage, lender matching, and a loan
+    offer/request marketplace.
+    \item k-means district clustering and isolation-forest
+    anomaly detection.
+    \item A first working frontend across all of the above.
+\end{itemize}
+
+\subsection{Current iteration (prototype stage)}
+\begin{itemize}[leftmargin=0.7cm]
+    \item Four separate, role-gated logins (Borrower,
+    Lender, SHG, Admin) replacing the previously-open
+    single interface.
+    \item Server-side authorization enforced on every
+    endpoint, scoped to the authenticated caller's own
+    identity.
+    \item A lender reputation/incentive score rewarding
+    competitive interest rates, informed by real-world
+    analogues (RBI priority-sector-lending and co-lending
+    incentive structures).
+    \item A redesigned landing page surfacing real,
+    data-derived borrower-improvement stories, SHG/lender
+    spotlights, and district-level score trends.
 \end{itemize}
 
 \subsection{Subsequent deliverables}
 \begin{itemize}[leftmargin=0.7cm]
-    \item Lightweight duplicate suggestions with staff review
-    \item Notification layer (email/SMS optional in later iteration; can start with in-app notifications)
-    \item Admin dashboard for metrics and backlog
-    \item Improved search/filtering and indexed queries for scale readiness
+    \item Periodic re-scoring so genuine score-history
+    trends accumulate over time (currently each individual
+    has a small number of scoring snapshots, since the
+    pipeline has only been run a handful of times).
+    \item Admin account-management/moderation actions
+    beyond the current read-only oversight view.
+    \item Real password hashing/short-lived signed tokens
+    in place of the deliberately-minimal demo bearer-token
+    scheme.
 \end{itemize}
 
 \section{Risks and mitigations}
 \begin{itemize}[leftmargin=0.7cm]
-    \item \textbf{Data privacy / consent:} minimize collected data; keep attachments optional; store only what is needed.
-    \item \textbf{Staff adoption:} provide an easy UI for status updates; keep workflow steps minimal; include shortcuts.
-    \item \textbf{Evaluation measurement ambiguity:} instrument timestamps and define clear status transitions before development begins.
-    \item \textbf{Operational issues in pilot:} use staging early; ensure CI/CD produces repeatable deployments.
+    \item \textbf{Cold-start data scarcity:} mitigated by
+    an explicit bootstrap-to-model blend rather than
+    forcing the model to score borrowers it has no signal
+    on.
+    \item \textbf{Fairness of the independent-vs-SHG base
+    score gap:} this is a stated policy parameter
+    (\texttt{INDEPENDENT\_BASE\_SCORE} vs. the SHG
+    bootstrap formula), not something the data derived --
+    flagged explicitly rather than hidden, and a candidate
+    for a sensitivity analysis.
+    \item \textbf{Demo-data limitations for time-series
+    features:} the synthetic dataset is scored in discrete
+    batch runs, so "score improved over time" features are
+    only as rich as the number of real scoring passes that
+    have actually been run -- we surface real deltas only,
+    never fabricated ones, even when that means a feature
+    section is temporarily sparse.
+    \item \textbf{Security of role-based auth:} mitigated
+    by enforcing authorization server-side (401/403) on
+    every endpoint, not relying on the frontend to hide
+    UI elements.
 \end{itemize}
 
 \section{Summary}
-This project proposes a deployable web platform to reduce grievance handling delays in a tier-2/3 city context. It meets the course criteria by emphasizing time-to-value through rapid iterations, implementing CI/CD to support frequent safe releases, and using measurable evaluation criteria (especially time-to-acknowledgement). It remains focused on engineering workflow and scalability readiness rather than research-driven novelty.
+This project proposes a deployable, explainable, dual-path
+credit-scoring and lending-marketplace platform for
+microfinance in India. It meets the course criteria by
+delivering value iteratively and verifying each stage
+end-to-end against real data, using CI/CD to support
+frequent safe releases, and defining measurable evaluation
+criteria (access-control correctness, explanation
+coverage, cold-start correctness, and marketplace
+liveness). It remains focused on engineering pipeline
+correctness, explainability, and access control rather
+than algorithmic novelty.
 
 \end{document}
