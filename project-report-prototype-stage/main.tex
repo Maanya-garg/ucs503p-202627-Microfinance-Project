@@ -455,32 +455,50 @@ Conference on Knowledge Discovery and Data Mining}.
 \appendix
 \section{Use Case Diagram}
 \label{sec:usecase-diagram}
-See \texttt{docs/uml/use-case-diagram.md} in the repository for the
-PlantUML source and full written use-case scenarios. Render the
-PlantUML block at \url{https://www.plantuml.com/plantuml/} (or any
-local PlantUML renderer), export as PNG/SVG, and place it here via
-\texttt{\textbackslash includegraphics}.
+Four actors (Borrower, Lender, SHG, Admin) against every real use case
+grounded in the actual API routers and dashboards. Full written
+use-case scenarios (preconditions, main/alternate flows,
+postconditions) for the six most important use cases are in
+\texttt{docs/uml/use-case-diagram.md} in the repository, alongside the
+PlantUML source (regenerate/edit at
+\url{https://www.plantuml.com/plantuml/}).
 
-% \includegraphics[width=\textwidth]{use-case-diagram.png}
+\begin{figure}[h]
+\centering
+\includegraphics[height=0.85\textheight]{figures/use-case-diagram.png}
+\caption{CreditSetu use case diagram}
+\end{figure}
 
+\clearpage
 \section{Class Diagram}
 \label{sec:class-diagram}
-See \texttt{docs/uml/class-diagram.md} in the repository for the
-PlantUML source and the accompanying design-decision notes (the
-nullable \texttt{shg\_id} dual-path pivot, append-only
-\texttt{CreditScore} history, and the \texttt{SHGLenderLink}
-many-to-many approve/reject table).
+The real SQLAlchemy schema (\texttt{app/models.py}), including the
+role-based-access session tables and the payments-feature additions.
+See \texttt{docs/uml/class-diagram.md} for the PlantUML source and the
+accompanying design-decision notes (the nullable \texttt{shg\_id}
+dual-path pivot, append-only \texttt{CreditScore} history, and the
+\texttt{SHGLenderLink} many-to-many approve/reject table).
 
-% \includegraphics[width=\textwidth]{class-diagram.png}
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figures/class-diagram.png}
+\caption{CreditSetu class diagram}
+\end{figure}
 
+\clearpage
 \section{Activity Diagram}
 \label{sec:activity-diagram}
-See \texttt{docs/uml/activity-diagram.md} in the repository for the
-PlantUML source (with Borrower / Lender / System swimlanes) covering
-the full request $\to$ approval $\to$ repayment $\to$ rescoring flow,
-and a prose walkthrough mapping each step to the real backend
-function it corresponds to.
+The real request $\to$ approval $\to$ repayment $\to$ rescoring
+control flow, with Borrower / System (Backend) / Lender swimlanes,
+including the aggregate insufficient-funds gate and the race-condition
+guard on the wallet balance. See \texttt{docs/uml/activity-diagram.md}
+for the PlantUML source and a step-by-step prose walkthrough mapping
+each step to the real backend function it corresponds to.
 
-% \includegraphics[width=\textwidth]{activity-diagram.png}
+\begin{figure}[h]
+\centering
+\includegraphics[height=0.85\textheight]{figures/activity-diagram.png}
+\caption{CreditSetu activity diagram: loan request, approval, and live repayment}
+\end{figure}
 
 \end{document}
