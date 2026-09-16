@@ -7,9 +7,9 @@ Engineering and Technology.
 
 | Name | Roll No. |
 |---|---|
-| Maanya Garg | 1024030564 |
-| Kashvi Bansal | 1024030563 |
 | Shreesh Gupta | 1024030565 |
+| Kashvi Bansal | 1024030563 |
+| Maanya Garg | 1024030564 |
 | Shivam Raj | 1024031140 |
 
 ## What this is
