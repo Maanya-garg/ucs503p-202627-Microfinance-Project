@@ -24,7 +24,10 @@ function CustomTooltip({ active, payload, label }) {
  * so this is the "did this person's score improve" story. */
 export default function ScoreHistoryChart({ history }) {
   if (!history?.length) return <p className="muted small">No score history yet.</p>
-  const data = history.map((h) => ({ date: h.calculated_date, score: h.score })).reverse()
+  // Backend already returns credit_scores oldest-first (CreditScore.calculated_date
+  // ascending, see app/models.py's relationship order_by) -- no reverse needed, the
+  // chart should read left-to-right as oldest-to-newest like any time series.
+  const data = history.map((h) => ({ date: h.calculated_date, score: h.score }))
 
   if (data.length === 1) {
     return <p className="muted small">Only one score on record so far -- {data[0].score}.</p>
