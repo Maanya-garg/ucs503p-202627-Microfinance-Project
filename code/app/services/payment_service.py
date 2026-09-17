@@ -16,12 +16,13 @@ class PaymentError(ValueError):
 
 
 class InsufficientFundsError(ValueError):
-    """Carries the wallet_balance / total_due_this_cycle pair the router
-    needs to build the contract's exact 400 body."""
+    """Carries the wallet_balance / amount_due pair the router needs to
+    build the contract's exact 400 body. Scoped to the single loan being
+    paid -- see pay_loan's per-loan sufficiency check below."""
 
-    def __init__(self, wallet_balance: float, total_due_this_cycle: float):
+    def __init__(self, wallet_balance: float, amount_due: float):
         self.wallet_balance = wallet_balance
-        self.total_due_this_cycle = total_due_this_cycle
+        self.amount_due = amount_due
         super().__init__("insufficient_funds")
 
 
@@ -58,12 +59,21 @@ def cycle_info(db: Session, loan: Loan) -> dict:
 def active_loans_due_summary(db: Session, individual: Individual) -> dict:
     """Every Active loan of this individual, due amounts computed fresh.
     Used both by GET /due-summary and by the server-side re-check inside
-    POST /pay (§3.3 step 3 -- never trust a client-cached flag)."""
+    POST /pay (§3.3 step 3 -- never trust a client-cached flag).
+
+    Sufficiency is per-loan (each loan's own `payable` flag: wallet_balance
+    >= that loan's amount_due_this_cycle), not aggregate -- a borrower can
+    pay any loan(s) they can individually afford, in any order, regardless
+    of what's owed on the others. `total_due_this_cycle` /
+    `sufficient_funds` are still returned as informational totals (e.g. for
+    "you can't clear everything at once" messaging), but nothing blocks on
+    them."""
     loans = (
         db.query(Loan)
         .filter(Loan.individual_id == individual.id, Loan.status == "Active")
         .all()
     )
+    wallet_balance = individual.wallet_balance or 0.0
     items = []
     total_due = 0.0
     for loan in loans:
@@ -73,10 +83,10 @@ def active_loans_due_summary(db: Session, individual: Individual) -> dict:
         # from the payable list (§2.3).
         if info["cycle_number"] > loan.tenure_months:
             continue
+        info["payable"] = wallet_balance >= info["amount_due_this_cycle"]
         items.append((loan, info))
         total_due += info["amount_due_this_cycle"]
     total_due = round(total_due, 2)
-    wallet_balance = individual.wallet_balance or 0.0
     return {
         "loans": items,
         "total_due_this_cycle": total_due,
@@ -98,17 +108,14 @@ def pay_loan(db: Session, individual: Individual, loan_id: int, compute_and_stor
     if loan.status != "Active":
         raise PaymentError("This loan isn't active -- nothing is due.")
 
-    # Re-fetch wallet_balance fresh and recompute the aggregate due-summary
-    # across ALL active loans, immediately before the sufficiency check and
-    # deduction, with no intervening query that could yield (§4.1 race fix).
+    # Re-fetch wallet_balance fresh and recompute due-summary immediately
+    # before the sufficiency check and deduction, with no intervening query
+    # that could yield (§4.1 race fix). Sufficiency is checked against THIS
+    # loan's own amount_due_this_cycle only -- a borrower can pay any loan
+    # they can individually afford, independent of what's owed elsewhere.
     db.refresh(individual)
     summary = active_loans_due_summary(db, individual)
-    if not summary["sufficient_funds"]:
-        raise InsufficientFundsError(summary["wallet_balance"], summary["total_due_this_cycle"])
 
-    # Find this loan's own cycle info from the same freshly-computed summary
-    # (keeps the emi/cycle_number consistent with what was just used for the
-    # aggregate check).
     info = None
     for l, i in summary["loans"]:
         if l.id == loan.id:
@@ -118,6 +125,9 @@ def pay_loan(db: Session, individual: Individual, loan_id: int, compute_and_stor
         # Loan is Active but already past its tenure (fully paid off in
         # substance) -- nothing payable.
         raise PaymentError("This loan has no cycle currently due.")
+
+    if not info["payable"]:
+        raise InsufficientFundsError(summary["wallet_balance"], info["amount_due_this_cycle"])
 
     emi = info["emi"]
     cycle_number = info["cycle_number"]

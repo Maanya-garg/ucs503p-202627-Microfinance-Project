@@ -28,6 +28,7 @@ def _loan_row(loan: Loan, info: dict) -> dict:
         "amount_due_this_cycle": info["amount_due_this_cycle"],
         "theoretical_due_date": info["theoretical_due_date"].isoformat(),
         "will_be_late": info["will_be_late"],
+        "payable": info["payable"],
     }
 
 
@@ -62,8 +63,9 @@ def due_summary(
 @router.post("/pay")
 def pay(body: PayIn, db: Session = Depends(get_db), current: Individual = Depends(get_current_individual)):
     """Borrower only. Pays the full server-computed amount_due_this_cycle for
-    one loan, after a server-side aggregate-sufficiency re-check across all
-    of the borrower's active loans (§3.3)."""
+    one loan, after a server-side per-loan sufficiency re-check (§3.3) --
+    the borrower's other loans/balances don't affect whether this one is
+    payable."""
     try:
         result = pay_loan(db, current, body.loan_id, compute_and_store_score)
         db.commit()
@@ -72,7 +74,7 @@ def pay(body: PayIn, db: Session = Depends(get_db), current: Individual = Depend
         raise HTTPException(400, {
             "error": "insufficient_funds",
             "wallet_balance": e.wallet_balance,
-            "total_due_this_cycle": e.total_due_this_cycle,
+            "amount_due": e.amount_due,
         })
     except PaymentError as e:
         db.rollback()

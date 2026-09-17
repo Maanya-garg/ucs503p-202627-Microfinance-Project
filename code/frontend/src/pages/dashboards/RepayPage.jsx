@@ -8,7 +8,8 @@ import ScoreBadge from '../../components/ScoreBadge'
 const GATEWAY_USER = 'abc'
 const GATEWAY_PASS = '123'
 
-function LoanRow({ loan, onPay, paying, result }) {
+function LoanRow({ loan, onPay, paying, result, rowError }) {
+  const disabled = paying || !loan.payable
   return (
     <div className="repay-row" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
@@ -21,11 +22,19 @@ function LoanRow({ loan, onPay, paying, result }) {
           <p className="repay-amount" style={{ margin: 0 }}>Rs. {loan.amount_due_this_cycle.toLocaleString('en-IN')}</p>
         </div>
         {!result && (
-          <button className="btn primary" onClick={() => onPay(loan.loan_id)} disabled={paying}>
+          <button className="btn primary" onClick={() => onPay(loan.loan_id)} disabled={disabled}>
             {paying ? 'Paying...' : 'Pay this loan'}
           </button>
         )}
       </div>
+      {!result && !loan.payable && (
+        <p className="muted small" style={{ color: 'var(--status-rejected)', marginTop: 4 }}>
+          Insufficient balance for this loan.
+        </p>
+      )}
+      {rowError && (
+        <div className="error-banner" style={{ marginTop: 6 }}>{rowError}</div>
+      )}
       {result && (
         <div className="repay-success-strip">
           <span aria-hidden="true">✓</span> Paid Rs. {result.amount_paid.toLocaleString('en-IN')} -- {result.status === 'On_Time' ? 'On time' : 'Late'}.{' '}
@@ -91,7 +100,7 @@ export default function RepayPage() {
   const [error, setError] = useState(null)
   const [payingId, setPayingId] = useState(null)
   const [results, setResults] = useState({})
-  const [blockedInfo, setBlockedInfo] = useState(null)
+  const [rowErrors, setRowErrors] = useState({})
 
   const loadSummary = () => {
     setLoading(true)
@@ -112,16 +121,22 @@ export default function RepayPage() {
 
   const handlePay = async (loanId) => {
     setPayingId(loanId)
+    setRowErrors((prev) => ({ ...prev, [loanId]: null }))
     try {
       const res = await api.payLoan(loanId, token)
       setResults((prev) => ({ ...prev, [loanId]: res }))
-      setBlockedInfo(null)
       loadSummary()
     } catch (e) {
-      // Contract: a live 400 insufficient_funds mid-session drops the whole
-      // page into the blocked state, regardless of which loan was clicked.
+      // Per-loan: an insufficient-funds 400 only affects the loan that was
+      // clicked (e.g. a race with another payment) -- other loans stay
+      // payable if the borrower can afford them individually.
       if (e.body?.error === 'insufficient_funds') {
-        setBlockedInfo(e.body)
+        setRowErrors((prev) => ({
+          ...prev,
+          [loanId]: `Insufficient balance -- needs Rs. ${e.body.amount_due.toLocaleString('en-IN')}, ` +
+            `wallet has Rs. ${e.body.wallet_balance.toLocaleString('en-IN')}.`,
+        }))
+        loadSummary()
       } else {
         alert(e.message)
       }
@@ -131,7 +146,6 @@ export default function RepayPage() {
   }
 
   const anySucceeded = Object.keys(results).length > 0
-  const blocked = blockedInfo || (summary && !summary.sufficient_funds)
 
   return (
     <div className="repay-page">
@@ -154,21 +168,11 @@ export default function RepayPage() {
               <>
                 <p className="card-sub">Wallet balance: Rs. {summary.wallet_balance.toLocaleString('en-IN')}</p>
 
-                {blocked && (
-                  <div className="error-banner">
-                    <p style={{ fontWeight: 700, margin: '0 0 6px' }}>Insufficient balance to complete this payment.</p>
-                    <p style={{ margin: 0 }}>
-                      Your wallet balance (Rs. {(blockedInfo?.wallet_balance ?? summary.wallet_balance).toLocaleString('en-IN')}) is
-                      less than the Rs. {(blockedInfo?.total_due_this_cycle ?? summary.total_due_this_cycle).toLocaleString('en-IN')} due
-                      across your {summary.loans.length} active loan(s) this cycle. Add funds or reduce the amount before retrying.
-                    </p>
-                  </div>
-                )}
-
-                {!blocked && summary.loans.length > 1 && (
+                {summary.loans.length > 1 && (
                   <p className="muted small">
-                    You have Rs. {summary.total_due_this_cycle.toLocaleString('en-IN')} due across {summary.loans.length} active
-                    loan(s) this cycle.
+                    Rs. {summary.total_due_this_cycle.toLocaleString('en-IN')} due in total across {summary.loans.length} active
+                    loan(s) this cycle -- pay any loan(s) you can individually afford, in any order.
+                    {!summary.sufficient_funds && ' Your balance doesn’t cover all of them at once yet.'}
                   </p>
                 )}
 
@@ -181,6 +185,7 @@ export default function RepayPage() {
                     onPay={handlePay}
                     paying={payingId === loan.loan_id}
                     result={results[loan.loan_id]}
+                    rowError={rowErrors[loan.loan_id]}
                   />
                 ))}
 
@@ -188,11 +193,6 @@ export default function RepayPage() {
                   <button className="btn primary" style={{ marginTop: 16, width: '100%' }} onClick={() => navigate('/borrower')}>
                     Done
                   </button>
-                )}
-                {blocked && (
-                  <Link className="btn" style={{ marginTop: 16, display: 'block', textAlign: 'center' }} to="/borrower">
-                    Back to Dashboard
-                  </Link>
                 )}
               </>
             )}
