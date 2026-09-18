@@ -3,12 +3,6 @@
 Roll No. 1024030564
 Name: Maanya Garg
 
-# Maanya Garg — Project Journal
-
-**Roll Number:** 1024030564  
-**Role:** Lender  
-**Project:** CreditSetu — Microfinance Platform
-
 ## Contribution Overview
 
 My work on CreditSetu focuses on the lender side of the platform. The lender
